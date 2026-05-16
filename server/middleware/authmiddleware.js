@@ -17,6 +17,7 @@ const protect = async (req, res, next) => {
 
       // save user info in request
       req.user = decoded;
+      console.log(decoded);
 
       next();
     } catch (error) {

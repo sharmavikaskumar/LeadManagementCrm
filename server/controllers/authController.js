@@ -1,6 +1,6 @@
-const User    = require("../models/User");
-const bcrypt  = require("bcryptjs");
-const jwt     = require("jsonwebtoken");
+const User = require("../models/User");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 const registerUser = async (req, res) => {
   try {
@@ -64,11 +64,10 @@ const loginUser = async (req, res) => {
     const token = jwt.sign(
       {
         id: user._id,
+        role: user.role,
       },
       process.env.JWT_SECRET,
-      {
-        expiresIn: "7d",
-      }
+      { expiresIn: "7d" }
     );
 
     res.status(200).json({
@@ -92,5 +91,5 @@ const loginUser = async (req, res) => {
 
 module.exports = {
   registerUser,
-   loginUser,
+  loginUser,
 };
