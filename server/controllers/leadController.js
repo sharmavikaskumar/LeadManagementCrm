@@ -1,3 +1,4 @@
+const { success } = require("zod");
 const Lead = require("../models/Lead");
 const { leadSchema } = require("../validations/leadValidation");
 
@@ -10,7 +11,10 @@ const createLead = async (req, res) => {
       ...validatedData,
       createdBy: req.user.id,
     });
-    res.status(201).json(lead);
+    res.status(201).json({
+      success: true,
+      lead,
+    });
   } catch (error) {
     if (error.name === "ZodError") {
       return res.status(400).json({
@@ -61,7 +65,7 @@ const getLeads = async (req, res) => {
       total,
       currentPage: page,
       totalPages: Math.ceil(total / limit),
-      data: leads,
+      leads: leads,
     });
   } catch (error) {
     res.status(500).json({
@@ -73,28 +77,42 @@ const getLeads = async (req, res) => {
 // UPDATE LEAD
 const updateLead = async (req, res) => {
   try {
-    const lead = await Lead.findById(req.params.id);
+    const validatedData = leadSchema.partial().parse(req.body);
 
-    if (!lead) {
+    const updatedLead = await Lead.findOneAndUpdate(
+      {
+        _id: req.params.id,
+        createdBy: req.user.id,
+      },
+      validatedData,
+      {
+        new: true,
+      },
+    );
+
+    // if lead not found OR unauthorized
+    if (!updatedLead) {
       return res.status(404).json({
-        message: "Lead not found",
+        success: false,
+        message: "Lead not found or unauthorized",
       });
     }
 
-    // check ownership
-    if (lead.createdBy.toString() !== req.user.id) {
-      return res.status(403).json({
-        message: "Not authorized",
-      });
-    }
-
-    const updatedLead = await Lead.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
+    res.status(200).json({
+      success: true,
+      lead: updatedLead,
     });
-
-    res.status(200).json(updatedLead);
   } catch (error) {
+    // zod validation error
+    if (error.name === "ZodError") {
+      return res.status(400).json({
+        success: false,
+        errors: error.issues,
+      });
+    }
+
     res.status(500).json({
+      success: false,
       message: error.message,
     });
   }
@@ -121,6 +139,7 @@ const deleteLead = async (req, res) => {
     await lead.deleteOne();
 
     res.status(200).json({
+      success: true,
       message: "Lead deleted",
     });
   } catch (error) {

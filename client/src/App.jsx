@@ -15,7 +15,7 @@ function App() {
       <Route path="/register" element={<RegisterPage />} />
 
       {/* Layout Routes */}
-      <Route path="/" element={<Layout />}>
+      <Route path="/dashboard" element={<Layout />}>
 
         <Route index element={<DashboardPage />} />
 

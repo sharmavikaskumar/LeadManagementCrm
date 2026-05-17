@@ -19,10 +19,15 @@ const Layout = () => {
     navigate("/login");
   };
 
+  // const navItems = [
+  //   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
+  //   { to: "/leads", icon: Users, label: "Leads" },
+  // ];
+
   const navItems = [
-    { to: "/", icon: LayoutDashboard, label: "Dashboard" },
-    { to: "/leads", icon: Users, label: "Leads" },
-  ];
+  { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+  { to: "/dashboard/leads", icon: Users, label: "Leads" },
+];
 
   return (
     <div className="flex min-h-screen bg-muted/40">
@@ -62,7 +67,7 @@ const Layout = () => {
                 <Icon className="w-4 h-4 shrink-0" />
                 {label}
                 {isActive && (
-                  <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />
+                  <span className="ml-auto w-1.5 h-1.5 rounded-full bg-green-500" />
                 )}
               </Link>
             );
