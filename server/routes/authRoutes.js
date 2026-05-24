@@ -1,19 +1,24 @@
 const express = require("express");
 
-const { registerUser, loginUser } = require("../controllers/authController");
-const {protect}=require("../middleware/authmiddleware")
+const {
+  registerUser,
+  loginUser,
+} = require("../controllers/authController");
+
+const {
+  getCurrentUser,
+} = require("../controllers/me");
+
+const { protect } = require("../middleware/authmiddleware");
 
 const router = express.Router();
 
+// Auth Routes
 router.post("/register", registerUser);
-router.post("/login",loginUser)
 
-router.get("/profile", protect, (req, res) => { //what bascally it t check the user id and verify the token → check authentication Before route runs
+router.post("/login", loginUser);
 
-  res.json({
-    message: "Profile accessed",
-    user: req.user,
-  });
-});
+// Current Logged In User
+router.get("/me", protect, getCurrentUser);
 
 module.exports = router;

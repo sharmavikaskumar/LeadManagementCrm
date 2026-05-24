@@ -149,9 +149,32 @@ const deleteLead = async (req, res) => {
   }
 };
 
+const addNote = async (req, res) => {
+  try {
+    const lead = await Lead.findById(req.params.id);
+    if (!lead) {
+      return res.status(404).json({
+        message: "lead not found",
+      });
+    }
+    const note = {
+      text: req.body.text,
+      createdBy: req.user.id,
+    };
+    lead.notes.unshift(note);
+    await lead.save(note);
+    res.status(200).json(lead);
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   createLead,
   getLeads,
   updateLead,
   deleteLead,
+  addNote,
 };

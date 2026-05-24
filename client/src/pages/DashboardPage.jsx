@@ -25,7 +25,7 @@ const DashboardPage = () => {
   const name = localStorage.getItem("name") || "there";
 
   return (
-    <div className="px-4 py-4 sm:px-6 sm:py-5 flex flex-col gap-4 max-w-7xl mx-auto">
+    <div className="px-4 py-4 sm:px-6 sm:py-5 flex flex-col gap-4 max-w-7xl mx-auto bg-[#FAF9F6]">
 
       {/* Header */}
       <div>

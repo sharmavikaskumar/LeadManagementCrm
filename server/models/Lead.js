@@ -25,16 +25,32 @@ const leadSchema = new mongoose.Schema(
       type: String,
     },
 
-    notes: {
-      type: String,
-    },
+    notes: [
+      {
+        text: {
+          type: String,
+          required: true,
+          trim: true,
+        },
+
+        createdBy: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+        },
+
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
 
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 module.exports = mongoose.model("Lead", leadSchema);

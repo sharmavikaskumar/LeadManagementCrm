@@ -1,18 +1,47 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
 import { LayoutDashboard, Users, LogOut, Zap, Menu, X } from "lucide-react";
 
 const Layout = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [user, setuser] = useState();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const name = localStorage.getItem("name") || "User Name";
+  const name = user?.name|| "User Name";
+  const role = user?.role || "Member";
   const initials = name
     ?.split(" ")
     .map((word) => word[0])
     .join("")
     .toUpperCase();
+
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(
+          `${import.meta.env.VITE_API_URL}/auth/me`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+        if (!response.ok) {
+          localStorage.removeItem("token");
+          navigate("/login");
+          return;
+        }
+        const data = await response.json();
+        console.log(data)
+        setuser(data);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    fetchCurrentUser();
+  }, [navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -78,14 +107,16 @@ const Layout = () => {
       </nav>
 
       {/* User + Logout */}
-      <div className="px-3 py-4 border-t border-border space-y-1 shrink-0">
+      <div className="px-3 py-4 border-t border-border space-y-1 shrink-0 ">
         <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted/60">
           <div className="w-8 h-8 rounded-full bg-blue-600 text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0">
             {initials}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">{name}</p>
-            <p className="text-[11px] text-muted-foreground">Member</p>
+            <p className="text-sm font-medium text-foreground truncate">
+              {name}
+            </p>
+            <p className="text-[11px] text-muted-foreground">{role}</p>
           </div>
         </div>
 
@@ -102,7 +133,6 @@ const Layout = () => {
 
   return (
     <div className="flex min-h-screen bg-muted/40">
-
       {/* ── Mobile overlay backdrop ── */}
       {sidebarOpen && (
         <div
@@ -124,10 +154,9 @@ const Layout = () => {
       </aside>
 
       {/* ── Main section ── */}
-      <div className="flex-1 flex flex-col min-w-0">
-
+      <div className="flex-1 flex flex-col min-w-0 ">
         {/* Topbar */}
-        <header className="h-14 md:h-16 bg-background border-b border-border px-4 md:px-6 flex items-center justify-between shrink-0 sticky top-0 z-30">
+        <header className="h-14 md:h-16 bg-background border-b  border-border px-4 md:px-6 flex items-center justify-between shrink-0 sticky top-0 z-30">
           <div className="flex items-center gap-3">
             {/* Hamburger — mobile only */}
             <button
@@ -140,7 +169,8 @@ const Layout = () => {
 
             <div>
               <h2 className="text-sm font-semibold text-foreground leading-tight">
-                {navItems.find((n) => n.to === location.pathname)?.label ?? "Overview"}
+                {navItems.find((n) => n.to === location.pathname)?.label ??
+                  "Overview"}
               </h2>
               <p className="text-xs text-muted-foreground hidden sm:block">
                 Welcome back, {name.split(" ")[0]}
@@ -150,7 +180,9 @@ const Layout = () => {
 
           <div className="flex items-center gap-2.5">
             <div className="w-2 h-2 rounded-full bg-green-500 ring-2 ring-green-500/20" />
-            <span className="text-xs text-muted-foreground hidden sm:block">Online</span>
+            <span className="text-xs text-muted-foreground hidden sm:block">
+              Online
+            </span>
             <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-blue-600 text-primary-foreground flex items-center justify-center text-xs md:text-sm font-semibold">
               {initials}
             </div>
