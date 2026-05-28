@@ -5,6 +5,7 @@ import RegisterPage from "./pages/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
 import LeadsPage from "./pages/LeadsPage";
 import LandingPage from "./pages/LandingPage";
+import BoardPage from "./pages/BoardPage";
 
 function App() {
   return (
@@ -23,6 +24,8 @@ function App() {
         <Route index element={<DashboardPage />} />
 
         <Route path="leads" element={<LeadsPage />} />
+
+        <Route path="board" element={<BoardPage />} />
 
       </Route>
 
