@@ -5,6 +5,7 @@ import {
   deleteLead,
   getLeads,
   updatedLead,
+  addLeadNote,
 } from "@/services/leadService";
 
 import {
@@ -44,6 +45,24 @@ const LeadsPage = () => {
     company: "",
     status: "new",
   });
+
+  const [showNotesModal, setShowNotesModal] = useState(false);
+  const [selectedLead, setSelectedLead] = useState(null);
+  const [noteText, setNoteText] = useState("");
+
+  const handleAddNote = async () => {
+    try {
+      const updatedLead = await addLeadNote(selectedLead._id, noteText);
+      setSelectedLead(updatedLead);
+      setLeads((prev) =>
+        prev.map((lead) => (lead._id === updatedLead._id ? updatedLead : lead)),
+      );
+      setNoteText("");
+      toast.success("Note added");
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
 
   useEffect(() => {
     const fetchLeads = async () => {
@@ -129,19 +148,23 @@ const LeadsPage = () => {
   const statusConfig = {
     new: {
       label: "New",
-      className: "bg-blue-50 text-blue-600 border-blue-200",
+      className:
+        "bg-blue-55/60 text-blue-600 border-blue-200 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-900/40",
     },
     contacted: {
       label: "Contacted",
-      className: "bg-purple-50 text-purple-600 border-purple-200",
+      className:
+        "bg-purple-55/60 text-purple-600 border-purple-200 dark:bg-purple-950/20 dark:text-purple-400 dark:border-purple-900/40",
     },
     qualified: {
       label: "Qualified",
-      className: "bg-emerald-50 text-emerald-600 border-emerald-200",
+      className:
+        "bg-emerald-55/60 text-emerald-600 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/40",
     },
     closed: {
       label: "Closed",
-      className: "bg-slate-100 text-slate-500 border-slate-200",
+      className:
+        "bg-slate-100 text-slate-500 border-slate-200 dark:bg-neutral-800 dark:text-neutral-450 dark:border-neutral-700",
     },
   };
 
@@ -158,7 +181,6 @@ const LeadsPage = () => {
     "bg-pink-500",
     "bg-fuchsia-500",
     "bg-purple-500",
-    "bg-violet-500",
     "bg-indigo-500",
     "bg-blue-500",
     "bg-sky-500",
@@ -170,31 +192,31 @@ const LeadsPage = () => {
 
   const getAvatarColor = (name) => {
     const hash = name.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
-    return avatarColors[hash % avatarColors.length];
+    return avatarColors[hash % avatarColors.length] + " text-white";
   };
 
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-[80vh] text-slate-400 gap-3">
-        <div className="w-5 h-5 border-2 border-slate-200 border-t-indigo-500 rounded-full animate-spin" />
-        <p className="text-xs text-slate-400">Loading leads…</p>
+        <div className="w-5 h-5 border-2 border-slate-200 dark:border-neutral-800 border-t-blue-500 rounded-full animate-spin" />
+        <p className="text-xs font-semibold text-slate-450">Loading leads…</p>
       </div>
     );
   }
 
   return (
-    <div className="px-4 py-4 sm:px-6 sm:py-5 max-w-7xl mx-auto space-y-4 bg-[#FAF9F6]">
+    <div className="px-4 py-6 sm:px-6 sm:py-8 max-w-7xl mx-auto space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-lg sm:text-xl font-semibold text-slate-900 tracking-tight">
-            Leads pipeline
+          <h1 className="text-lg sm:text-2xl font-semibold text-slate-900 dark:text-white tracking-tight">
+            Leads Pipeline
           </h1>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Manage, track, and convert your potential customers.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
+        <div className="flex items-center gap-2.5 w-full sm:w-auto">
           {/* Search */}
           <div className="relative flex-1 sm:flex-none">
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
@@ -203,14 +225,14 @@ const LeadsPage = () => {
               placeholder="Search leads…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-8 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-xs w-full sm:w-52 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-colors"
+              className="pl-8 pr-3 py-2 bg-background border border-border text-foreground rounded-lg text-xs w-full sm:w-52 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors"
             />
           </div>
 
           {/* Add Lead */}
           <button
             onClick={() => setShowModel(true)}
-            className="flex items-center gap-1.5 bg-slate-900 text-white px-3 py-2 rounded-lg text-xs font-medium hover:bg-slate-800 transition-colors whitespace-nowrap"
+            className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-lg text-xs font-medium transition-colors whitespace-nowrap"
           >
             <Plus className="w-3.5 h-3.5" />
             Add lead
@@ -219,19 +241,21 @@ const LeadsPage = () => {
       </div>
 
       {/* ── Mobile card list (< md) ── */}
-      <div className="md:hidden space-y-2">
+      <div className="md:hidden space-y-3">
         {filteredLeads.length === 0 ? (
-          <div className="bg-white border border-slate-200 rounded-xl py-16 flex flex-col items-center gap-3">
-            <div className="w-9 h-9 bg-slate-100 rounded-lg flex items-center justify-center">
+          <div className="bg-card border border-border rounded-xl py-16 flex flex-col items-center gap-3">
+            <div className="w-9 h-9 bg-neutral-100 dark:bg-neutral-900 rounded-lg flex items-center justify-center">
               <Users className="w-4 h-4 text-slate-400" />
             </div>
-            <p className="text-slate-700 font-medium text-sm">No leads found</p>
+            <p className="text-foreground font-medium text-sm">
+              No leads found
+            </p>
             <p className="text-slate-400 text-xs text-center max-w-xs px-4">
               Get started by adding your first lead.
             </p>
             <button
               onClick={() => setShowModel(true)}
-              className="flex items-center gap-1.5 text-indigo-600 hover:bg-indigo-50 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+              className="flex items-center gap-1.5 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-neutral-900 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border border-border"
             >
               <Plus className="w-3.5 h-3.5" /> Add your first lead
             </button>
@@ -240,20 +264,20 @@ const LeadsPage = () => {
           filteredLeads.map((lead) => (
             <div
               key={lead._id}
-              className="bg-white border border-slate-200 rounded-xl p-4"
+              className="bg-card border border-border rounded-xl p-4.5"
             >
               <div className="flex items-center gap-3">
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0 ${getAvatarColor(lead.name)}`}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${getAvatarColor(lead.name)}`}
                 >
                   {getInitials(lead.name)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm text-slate-900 truncate">
+                  <p className="font-semibold text-sm text-foreground truncate">
                     {lead.name}
                   </p>
-                  <div className="flex items-center gap-1 text-xs text-slate-400 mt-0.5">
-                    <Building2 className="w-3 h-3 shrink-0" />
+                  <div className="flex items-center gap-1 text-xs text-slate-450 mt-0.5">
+                    <Building2 className="w-3 h-3 shrink-0 text-slate-400" />
                     <span className="truncate">{lead.company}</span>
                   </div>
                 </div>
@@ -267,27 +291,37 @@ const LeadsPage = () => {
                 </span>
               </div>
 
-              <div className="mt-3 pt-3 border-t border-slate-100 flex flex-col gap-1.5">
+              <div className="mt-3 pt-3 border-t border-border flex flex-col gap-1.5">
                 <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                  <Mail className="w-3 h-3 text-slate-300 shrink-0" />
+                  <Mail className="w-3 h-3 text-slate-400 shrink-0" />
                   <span className="truncate">{lead.email}</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                  <Phone className="w-3 h-3 text-slate-300 shrink-0" />
+                  <Phone className="w-3 h-3 text-slate-400 shrink-0" />
                   <span>{lead.phone}</span>
                 </div>
               </div>
 
-              <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+              <div className="mt-3 pt-3 border-t border-border flex items-center justify-end gap-2">
                 <button
                   onClick={() => handelEditlead(lead)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
+                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/20 dark:text-blue-400 rounded-lg transition-colors"
                 >
                   <Edit2 className="w-3 h-3" /> Edit
                 </button>
                 <button
+                  onClick={() => {
+                    setSelectedLead(lead);
+                    setShowNotesModal(true);
+                  }}
+                  className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-md transition-colors"
+                  title="Notes"
+                >
+                  Notes
+                </button>
+                <button
                   onClick={() => handleDelete(lead._id)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-lg transition-colors"
+                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-rose-600 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:text-rose-400 rounded-lg transition-colors"
                 >
                   <Trash2 className="w-3 h-3" /> Delete
                 </button>
@@ -298,11 +332,11 @@ const LeadsPage = () => {
       </div>
 
       {/* ── Desktop table (≥ md) ── */}
-      <div className="hidden md:block bg-white border border-slate-200 rounded-xl overflow-hidden">
+      <div className="hidden md:block bg-card border border-border rounded-xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="bg-slate-50 hover:bg-slate-50 border-b border-slate-200">
+              <TableRow className="bg-neutral-50 dark:bg-neutral-900/40 hover:bg-neutral-50 dark:hover:bg-neutral-900/40 border-b border-border">
                 <TableHead className="text-[10.5px] font-semibold uppercase tracking-wider text-slate-400 py-3 pl-5">
                   Lead
                 </TableHead>
@@ -325,20 +359,20 @@ const LeadsPage = () => {
               {filteredLeads.map((lead) => (
                 <TableRow
                   key={lead._id}
-                  className="hover:bg-slate-50/60 transition-colors border-b border-slate-100 last:border-0 group"
+                  className="hover:bg-neutral-100/10 dark:hover:bg-neutral-900/30 transition-colors border-b border-border last:border-0 group"
                 >
                   <TableCell className="py-3 pl-5">
                     <div className="flex items-center gap-2.5">
                       <div
-                        className={`w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-semibold flex-shrink-0 ${getAvatarColor(lead.name)}`}
+                        className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold flex-shrink-0 ${getAvatarColor(lead.name)}`}
                       >
                         {getInitials(lead.name)}
                       </div>
                       <div>
-                        <div className="font-medium text-sm text-slate-900">
+                        <div className="font-semibold text-sm text-foreground">
                           {lead.name}
                         </div>
-                        <div className="text-xs text-slate-400 lg:hidden mt-0.5">
+                        <div className="text-xs text-slate-450 lg:hidden mt-0.5">
                           {lead.company}
                         </div>
                       </div>
@@ -348,21 +382,21 @@ const LeadsPage = () => {
                   <TableCell className="py-3">
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                        <Mail className="w-3 h-3 text-slate-300 shrink-0" />
+                        <Mail className="w-3 h-3 text-slate-400 shrink-0" />
                         <span className="truncate max-w-[140px] xl:max-w-[200px]">
                           {lead.email}
                         </span>
                       </div>
-                      <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                        <Phone className="w-3 h-3 text-slate-300 shrink-0" />
+                      <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                        <Phone className="w-3 h-3 text-slate-400 shrink-0" />
                         <span>{lead.phone}</span>
                       </div>
                     </div>
                   </TableCell>
 
                   <TableCell className="py-3 hidden lg:table-cell">
-                    <div className="flex items-center gap-1.5 text-xs text-slate-600">
-                      <Building2 className="w-3 h-3 text-slate-300 shrink-0" />
+                    <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-350">
+                      <Building2 className="w-3 h-3 text-slate-400 shrink-0" />
                       <span className="truncate max-w-[130px]">
                         {lead.company}
                       </span>
@@ -384,14 +418,24 @@ const LeadsPage = () => {
                     <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => handelEditlead(lead)}
-                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"
+                        className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-md transition-colors"
                         title="Edit"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       <button
+                        onClick={() => {
+                          setSelectedLead(lead);
+                          setShowNotesModal(true);
+                        }}
+                        className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-md transition-colors"
+                        title="Notes"
+                      >
+                        Notes
+                      </button>
+                      <button
                         onClick={() => handleDelete(lead._id)}
-                        className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-md transition-colors"
+                        className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-55/15 dark:hover:bg-rose-950/40 rounded-md transition-colors"
                         title="Delete"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -405,10 +449,10 @@ const LeadsPage = () => {
                 <TableRow>
                   <TableCell colSpan={5} className="py-20 text-center">
                     <div className="flex flex-col items-center gap-3">
-                      <div className="w-9 h-9 bg-slate-100 rounded-lg flex items-center justify-center">
+                      <div className="w-9 h-9 bg-neutral-100 dark:bg-neutral-900 rounded-lg flex items-center justify-center">
                         <Users className="w-4 h-4 text-slate-400" />
                       </div>
-                      <p className="text-slate-700 font-medium text-sm">
+                      <p className="text-foreground font-medium text-sm">
                         No leads found
                       </p>
                       <p className="text-slate-400 text-xs max-w-xs mx-auto">
@@ -417,7 +461,7 @@ const LeadsPage = () => {
                       </p>
                       <button
                         onClick={() => setShowModel(true)}
-                        className="flex items-center gap-1.5 text-indigo-600 hover:bg-indigo-50 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                        className="flex items-center gap-1.5 text-blue-600 hover:bg-blue-50 dark:text-blue-400 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border border-border"
                       >
                         <Plus className="w-3.5 h-3.5" /> Add your first lead
                       </button>
@@ -430,23 +474,24 @@ const LeadsPage = () => {
         </div>
 
         {leads.length > 0 && (
-          <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100 bg-slate-50/50">
+          <div className="flex items-center justify-between px-5 py-3 border-t border-border bg-neutral-50/50 dark:bg-neutral-900/30">
             <p className="text-xs text-slate-400">
-              Page <span className="font-medium text-slate-600">{page}</span> of{" "}
-              <span className="font-medium text-slate-600">{totalPages}</span>
+              Page <span className="font-medium text-foreground">{page}</span>{" "}
+              of{" "}
+              <span className="font-medium text-foreground">{totalPages}</span>
             </p>
             <div className="flex items-center gap-1.5">
               <button
                 disabled={page === 1}
                 onClick={() => setPage(page - 1)}
-                className="flex items-center gap-1 px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs font-medium text-slate-500 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors bg-transparent"
+                className="flex items-center gap-1 px-2.5 py-1.5 border border-border rounded-lg text-xs font-medium text-slate-500 hover:bg-background dark:hover:bg-neutral-900 disabled:opacity-40 disabled:cursor-not-allowed transition-colors bg-transparent"
               >
                 <ChevronLeft className="w-3.5 h-3.5" /> Prev
               </button>
               <button
                 disabled={page === totalPages}
                 onClick={() => setPage(page + 1)}
-                className="flex items-center gap-1 px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs font-medium text-slate-500 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors bg-transparent"
+                className="flex items-center gap-1 px-2.5 py-1.5 border border-border rounded-lg text-xs font-medium text-slate-500 hover:bg-background dark:hover:bg-neutral-900 disabled:opacity-40 disabled:cursor-not-allowed transition-colors bg-transparent"
               >
                 Next <ChevronRight className="w-3.5 h-3.5" />
               </button>
@@ -459,21 +504,21 @@ const LeadsPage = () => {
       {leads.length > 0 && (
         <div className="md:hidden flex items-center justify-between px-1">
           <p className="text-xs text-slate-400">
-            Page <span className="font-medium text-slate-600">{page}</span> of{" "}
-            <span className="font-medium text-slate-600">{totalPages}</span>
+            Page <span className="font-medium text-foreground">{page}</span> of{" "}
+            <span className="font-medium text-foreground">{totalPages}</span>
           </p>
           <div className="flex items-center gap-2">
             <button
               disabled={page === 1}
               onClick={() => setPage(page - 1)}
-              className="flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium text-slate-500 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center gap-1 px-3 py-1.5 border border-border rounded-lg text-xs font-medium text-slate-500 bg-background dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronLeft className="w-3.5 h-3.5" /> Prev
             </button>
             <button
               disabled={page === totalPages}
               onClick={() => setPage(page + 1)}
-              className="flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium text-slate-500 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center gap-1 px-3 py-1.5 border border-border rounded-lg text-xs font-medium text-slate-500 bg-background dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               Next <ChevronRight className="w-3.5 h-3.5" />
             </button>
@@ -484,16 +529,16 @@ const LeadsPage = () => {
       {/* ── Modal ── */}
       {showModel && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-slate-900/30 backdrop-blur-[2px]"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-slate-900/30 dark:bg-black/50 backdrop-blur-[2px]"
           onClick={(e) => e.target === e.currentTarget && closeModal()}
         >
-          <div className="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-xl shadow-xl overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+          <div className="bg-background border border-border w-full sm:max-w-md rounded-xl shadow-xl overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
               <div>
-                <h2 className="text-sm font-semibold text-slate-900">
+                <h2 className="text-sm font-semibold text-foreground">
                   {editingLead ? "Edit lead" : "Add new lead"}
                 </h2>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-slate-450 mt-0.5">
                   {editingLead
                     ? "Update the information for this lead."
                     : "Enter the details for this lead."}
@@ -501,7 +546,7 @@ const LeadsPage = () => {
               </div>
               <button
                 onClick={closeModal}
-                className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1.5 rounded-md transition-colors"
+                className="text-slate-400 hover:text-foreground hover:bg-muted p-1.5 rounded-md transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -520,7 +565,7 @@ const LeadsPage = () => {
                     value={formData.name}
                     onChange={handleChange}
                     required
-                    className="border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-colors"
+                    className="border border-border bg-background text-foreground rounded-lg px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors"
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
@@ -534,7 +579,7 @@ const LeadsPage = () => {
                     value={formData.company}
                     onChange={handleChange}
                     required
-                    className="border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-colors"
+                    className="border border-border bg-background text-foreground rounded-lg px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors"
                   />
                 </div>
               </div>
@@ -550,7 +595,7 @@ const LeadsPage = () => {
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  className="border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-colors"
+                  className="border border-border bg-background text-foreground rounded-lg px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors"
                 />
               </div>
 
@@ -565,7 +610,7 @@ const LeadsPage = () => {
                     placeholder="+91 9000000000"
                     value={formData.phone}
                     onChange={handleChange}
-                    className="border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-colors"
+                    className="border border-border bg-background text-foreground rounded-lg px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors"
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
@@ -577,7 +622,7 @@ const LeadsPage = () => {
                       name="status"
                       value={formData.status}
                       onChange={handleChange}
-                      className="appearance-none w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-colors pr-8"
+                      className="appearance-none w-full border border-border bg-background text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors pr-8"
                     >
                       <option value="new">New</option>
                       <option value="contacted">Contacted</option>
@@ -591,21 +636,103 @@ const LeadsPage = () => {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-1 border-t border-slate-100">
+              <div className="flex justify-end gap-2 pt-1 border-t border-border">
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="px-4 py-2 text-xs font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+                  className="px-4 py-2 text-xs font-medium text-foreground bg-background border border-border rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={handleSubmit}
-                  className="px-4 py-2 text-xs font-medium text-white bg-slate-900 rounded-lg hover:bg-slate-800 transition-colors"
+                  className="px-4 py-2 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-750 transition-colors"
                 >
                   {editingLead ? "Update lead" : "Save lead"}
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ── Notes Modal ── */}
+      {showNotesModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+          onClick={(e) =>
+            e.target === e.currentTarget && setShowNotesModal(false)
+          }
+        >
+          <div className="bg-background border border-border w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+              <div>
+                <h2 className="text-sm font-semibold text-foreground">
+                  Lead Notes
+                </h2>
+
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {selectedLead?.name}
+                </p>
+              </div>
+
+              <button
+                onClick={() => setShowNotesModal(false)}
+                className="p-1.5 rounded-md hover:bg-muted transition-colors"
+              >
+                <X className="w-4 h-4 text-slate-500" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-5 space-y-4">
+              {/* Add note */}
+              <div className="space-y-3">
+                <textarea
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                  placeholder="Write a note..."
+                  rows={4}
+                  className="w-full border border-border bg-background rounded-xl p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                />
+
+                <div className="flex justify-end">
+                  <button
+                    onClick={handleAddNote}
+                    disabled={!noteText.trim()}
+                    className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium px-4 py-2 rounded-lg transition-colors"
+                  >
+                    Add Note
+                  </button>
+                </div>
+              </div>
+
+              {/* Notes list */}
+              <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+                {selectedLead?.notes?.length > 0 ? (
+                  selectedLead.notes
+                    .slice()
+                    .reverse()
+                    .map((note, index) => (
+                      <div
+                        key={index}
+                        className="border border-border rounded-xl p-3 bg-muted/30"
+                      >
+                        <p className="text-sm text-foreground whitespace-pre-wrap">
+                          {note.text}
+                        </p>
+
+                        <p className="text-[11px] text-slate-400 mt-2">
+                          {new Date(note.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                    ))
+                ) : (
+                  <div className="text-center py-10">
+                    <p className="text-sm text-slate-400">No notes added yet</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

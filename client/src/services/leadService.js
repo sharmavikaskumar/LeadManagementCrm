@@ -6,20 +6,18 @@ export const getLeads = async (page = 1) => {
   return response.data;
 };
 
-
 export const cretaeLead = async (leadData) => {
   const response = await API.post("/leads", leadData);
   return leadData;
 };
 
-
 export const updatedLead = async (id, leadData) => {
   const token = localStorage.getItem("token");
-  const response =await fetch(`http://localhost:5000/api/leads/${id}`, {
+  const response = await fetch(`http://localhost:5000/api/leads/${id}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
-       Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(leadData),
   });
@@ -27,7 +25,6 @@ export const updatedLead = async (id, leadData) => {
   if (!response.ok) throw new Error(data.message);
   return data.lead;
 };
-
 
 // export const deleteLead = async (id) => {
 //   const response = await fetch(`${BASE_URL}/leads/${id}`, {
@@ -41,7 +38,6 @@ export const updatedLead = async (id, leadData) => {
 //   return data;
 // };
 
-
 export const deleteLead = async (id) => {
   const token = localStorage.getItem("token");
   const response = await fetch(`http://localhost:5000/api/leads/${id}`, {
@@ -53,6 +49,28 @@ export const deleteLead = async (id) => {
   });
   const data = await response.json();
 
+  if (!response.ok) {
+    throw new Error(data.message);
+  }
+  return data;
+};
+
+export const addLeadNote = async (id, text) => {
+  const token = localStorage.getItem("token");
+  const response = await fetch(
+    `${import.meta.env.VITE_API_URL}/leads/${id}/notes`,
+    {
+      method: "post",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        text,
+      }),
+    },
+  );
+  const data = await response.json();
   if (!response.ok) {
     throw new Error(data.message);
   }

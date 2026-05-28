@@ -1,20 +1,43 @@
 import React, { useState, useEffect } from "react";
 import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, LogOut, Zap, Menu, X } from "lucide-react";
+import { LayoutDashboard, Users, LogOut, Zap, Menu, X, Sun, Moon } from "lucide-react";
 
 const Layout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [user, setuser] = useState();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [theme, setTheme] = useState("light");
 
-  const name = user?.name|| "User Name";
+  const name = user?.name || "User Name";
   const role = user?.role || "Member";
   const initials = name
     ?.split(" ")
     .map((word) => word[0])
     .join("")
     .toUpperCase();
+
+  useEffect(() => {
+    // Determine active theme on load
+    const savedTheme = localStorage.getItem("landing-theme") || "light";
+    setTheme(savedTheme);
+    if (savedTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    localStorage.setItem("landing-theme", nextTheme);
+    if (nextTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  };
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -34,7 +57,6 @@ const Layout = () => {
           return;
         }
         const data = await response.json();
-        console.log(data)
         setuser(data);
       } catch (error) {
         console.log(error);
@@ -92,24 +114,21 @@ const Layout = () => {
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
                 ${
                   isActive
-                    ? "bg-primary/10 text-primary"
+                    ? "bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 font-semibold"
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 }`}
             >
               <Icon className="w-4 h-4 shrink-0" />
               {label}
-              {isActive && (
-                <span className="ml-auto w-1.5 h-1.5 rounded-full bg-green-500" />
-              )}
             </Link>
           );
         })}
       </nav>
 
       {/* User + Logout */}
-      <div className="px-3 py-4 border-t border-border space-y-1 shrink-0 ">
+      <div className="px-3 py-4 border-t border-border space-y-1 shrink-0">
         <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted/60">
-          <div className="w-8 h-8 rounded-full bg-blue-600 text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0">
+          <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0">
             {initials}
           </div>
           <div className="flex-1 min-w-0">
@@ -132,8 +151,8 @@ const Layout = () => {
   );
 
   return (
-    <div className="flex min-h-screen bg-muted/40">
-      {/* ── Mobile overlay backdrop ── */}
+    <div className="flex min-h-screen bg-background transition-colors duration-300">
+      {/* Mobile overlay backdrop */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm md:hidden"
@@ -141,7 +160,7 @@ const Layout = () => {
         />
       )}
 
-      {/* ── Sidebar — static on desktop, slide-in drawer on mobile ── */}
+      {/* Sidebar */}
       <aside
         className={`
           fixed inset-y-0 left-0 z-50 w-60 bg-background border-r border-border flex flex-col
@@ -153,10 +172,10 @@ const Layout = () => {
         <SidebarContent />
       </aside>
 
-      {/* ── Main section ── */}
-      <div className="flex-1 flex flex-col min-w-0 ">
+      {/* Main section */}
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Topbar */}
-        <header className="h-14 md:h-16 bg-background border-b  border-border px-4 md:px-6 flex items-center justify-between shrink-0 sticky top-0 z-30">
+        <header className="h-14 md:h-16 bg-background border-b border-border px-4 md:px-6 flex items-center justify-between shrink-0 sticky top-0 z-30">
           <div className="flex items-center gap-3">
             {/* Hamburger — mobile only */}
             <button
@@ -179,11 +198,20 @@ const Layout = () => {
           </div>
 
           <div className="flex items-center gap-2.5">
-            <div className="w-2 h-2 rounded-full bg-green-500 ring-2 ring-green-500/20" />
+            {/* Light/Dark Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-lg text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+              aria-label="Toggle Theme Mode"
+            >
+              {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+
+            <div className="w-2 h-2 rounded-full bg-green-500 ring-2 ring-green-500/20 animate-pulse" />
             <span className="text-xs text-muted-foreground hidden sm:block">
               Online
             </span>
-            <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-blue-600 text-primary-foreground flex items-center justify-center text-xs md:text-sm font-semibold">
+            <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs md:text-sm font-semibold">
               {initials}
             </div>
           </div>

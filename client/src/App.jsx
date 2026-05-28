@@ -4,10 +4,13 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
 import LeadsPage from "./pages/LeadsPage";
+import LandingPage from "./pages/LandingPage";
 
 function App() {
   return (
     <Routes>
+      {/* Landing Page */}
+      <Route path="/" element={<LandingPage />} />
 
       {/* Auth */}
       <Route path="/login" element={<LoginPage />} />
