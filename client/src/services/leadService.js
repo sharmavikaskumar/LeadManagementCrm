@@ -13,7 +13,7 @@ export const cretaeLead = async (leadData) => {
 
 export const updatedLead = async (id, leadData) => {
   const token = localStorage.getItem("token");
-  const response = await fetch(`http://localhost:5000/api/leads/${id}`, {
+  const response = await fetch(`http://192.168.43.11:5000/api/leads/${id}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -40,7 +40,7 @@ export const updatedLead = async (id, leadData) => {
 
 export const deleteLead = async (id) => {
   const token = localStorage.getItem("token");
-  const response = await fetch(`http://localhost:5000/api/leads/${id}`, {
+  const response = await fetch(`http://192.168.43.11:5000/api/leads/${id}`, {
     method: "DELETE",
 
     headers: {

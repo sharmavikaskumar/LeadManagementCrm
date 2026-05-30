@@ -8,7 +8,7 @@ const DashboardPage = () => {
     const fetchDashboard = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch("http://localhost:5000/api/dashboard", {
+        const response = await fetch("http://192.168.43.11:5000/api/dashboard", {
           headers: {
             Authorization: `Bearer ${token}`,
           },

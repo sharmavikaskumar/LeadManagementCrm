@@ -1,29 +1,44 @@
 import React, { useState, useEffect } from "react";
-import { getLeads } from "@/services/leadService";
+import { getLeads, updatedLead } from "@/services/leadService";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import { Building2, Mail, GripVertical } from "lucide-react";
+import { Building2, Mail, Phone, GripVertical, Users } from "lucide-react";
 
 const COLUMN_CONFIG = {
-  new: { 
-    label: "New", 
-    color: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
-    dot: "bg-blue-500"
+  new: {
+    label: "New",
+    dot: "bg-blue-400",
+    pill: "bg-blue-50/60 text-blue-600 border-blue-200 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-900/40",
   },
-  contacted: { 
-    label: "Contacted", 
-    color: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
-    dot: "bg-amber-500"
+  contacted: {
+    label: "Contacted",
+    dot: "bg-purple-400",
+    pill: "bg-purple-50/60 text-purple-600 border-purple-200 dark:bg-purple-950/20 dark:text-purple-400 dark:border-purple-900/40",
   },
-  qualified: { 
-    label: "Qualified", 
-    color: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300",
-    dot: "bg-purple-500"
+  qualified: {
+    label: "Qualified",
+    dot: "bg-emerald-400",
+    pill: "bg-emerald-50/60 text-emerald-600 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/40",
   },
-  closed: { 
-    label: "Closed", 
-    color: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
-    dot: "bg-emerald-500"
+  closed: {
+    label: "Closed",
+    dot: "bg-slate-400",
+    pill: "bg-slate-100 text-slate-500 border-slate-200 dark:bg-neutral-800 dark:text-neutral-400 dark:border-neutral-700",
   },
+};
+
+const avatarColors = [
+  "bg-rose-500",   "bg-pink-500",    "bg-fuchsia-500",
+  "bg-purple-500", "bg-indigo-500",  "bg-blue-500",
+  "bg-sky-500",    "bg-cyan-500",    "bg-teal-500",
+  "bg-emerald-500","bg-green-500",
+];
+
+const getInitials = (name = "") =>
+  name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+
+const getAvatarColor = (name = "") => {
+  const hash = name.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  return avatarColors[hash % avatarColors.length] + " text-white";
 };
 
 const BoardPage = () => {
@@ -42,106 +57,145 @@ const BoardPage = () => {
     fetchLeads();
   }, []);
 
-  const onDragEnd = (result) => {
+  const onDragEnd = async (result) => {
     if (!result.destination) return;
-
     const { draggableId, source, destination } = result;
-
     if (destination.droppableId === source.droppableId) return;
-
-    setLeads((prev) =>
-      prev.map((lead) =>
-        lead._id === draggableId ? { ...lead, status: destination.droppableId } : lead
-      )
-    );
+    try {
+      await updatedLead(draggableId, { status: destination.droppableId });
+      setLeads((prev) =>
+        prev.map((lead) =>
+          lead._id === draggableId
+            ? { ...lead, status: destination.droppableId }
+            : lead
+        )
+      );
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-6">
-        
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-            Lead Pipeline
+      <div className="px-4 py-6 sm:px-6 sm:py-8 max-w-7xl mx-auto space-y-4">
+
+        {/* Header — exact same structure as LeadsPage */}
+        <div>
+          <h1 className="text-lg sm:text-2xl font-semibold text-slate-900 dark:text-white tracking-tight">
+            Leads Pipeline
           </h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Drag and drop leads across stages to update their status.
+          </p>
         </div>
 
-        {/* ✅ The Layout Fix: 1 column on mobile, 2 columns on desktop */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 max-w-5xl mx-auto">
+        {/* Board grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           {columns.map((status) => {
-            const filteredLeads = leads.filter((lead) => lead.status === status);
+            const filteredLeads = leads.filter((l) => l.status === status);
             const config = COLUMN_CONFIG[status];
 
             return (
-              <div 
+              <div
                 key={status}
-                className="flex flex-col bg-slate-200/50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 max-h-[600px]"
+                className="flex flex-col bg-neutral-50 dark:bg-neutral-900/40 rounded-xl border border-border overflow-hidden"
               >
-                {/* Column Header */}
-                <div className="p-4 border-b border-slate-200 dark:border-slate-700/50 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${config.dot}`} />
-                    <h2 className="font-semibold text-slate-700 dark:text-slate-200">
-                      {config.label}
-                    </h2>
-                  </div>
-                  <span className="text-xs font-medium py-1 px-2.5 rounded-full bg-white dark:bg-slate-800 text-slate-500 shadow-sm">
+                {/* Column header — matches TableHeader row style */}
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-neutral-50 dark:bg-neutral-900/40 border-b border-border">
+                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${config.dot}`} />
+                  <span className="text-[10.5px] font-semibold uppercase tracking-wider text-slate-400 flex-1">
+                    {config.label}
+                  </span>
+                  <span className="text-xs font-medium text-slate-400 bg-background dark:bg-neutral-800 border border-border px-2 py-0.5 rounded-full">
                     {filteredLeads.length}
                   </span>
                 </div>
 
-                {/* Droppable Area (Scrolls internally if too many cards) */}
+                {/* Droppable area */}
                 <Droppable droppableId={status}>
                   {(provided, snapshot) => (
                     <div
                       ref={provided.innerRef}
                       {...provided.droppableProps}
-                      className={`flex-1 overflow-y-auto p-3 space-y-3 transition-colors ${
-                        snapshot.isDraggingOver ? "bg-slate-200/80 dark:bg-slate-800/80" : ""
+                      className={`flex-1 overflow-y-auto p-2.5 flex flex-col gap-2 min-h-[200px] transition-colors ${
+                        snapshot.isDraggingOver
+                          ? "bg-neutral-100 dark:bg-neutral-800/40"
+                          : ""
                       }`}
                     >
                       {filteredLeads.map((lead, index) => (
-                        <Draggable draggableId={lead._id} index={index} key={lead._id}>
+                        <Draggable
+                          draggableId={lead._id}
+                          index={index}
+                          key={lead._id}
+                        >
                           {(provided, snapshot) => (
                             <div
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
-                              className={`group relative bg-white dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-700 select-none ${
-                                snapshot.isDragging 
-                                  ? "shadow-xl ring-2 ring-blue-500 rotate-1 scale-[1.02] cursor-grabbing z-50" 
-                                  : "shadow-sm cursor-grab"
+                              className={`group relative bg-card border border-border rounded-xl p-4 select-none transition-all ${
+                                snapshot.isDragging
+                                  ? "shadow-lg ring-1 ring-border rotate-[0.8deg] scale-[1.01] cursor-grabbing"
+                                  : "shadow-sm hover:border-slate-300 dark:hover:border-neutral-600 cursor-grab"
                               }`}
                             >
-                              {/* Drag Handle */}
-                              <div className="absolute top-4 right-3 text-slate-300 dark:text-slate-600 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                                <GripVertical size={16} />
+                              {/* Grip */}
+                              <div className="absolute top-3.5 right-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-slate-300 dark:text-slate-600">
+                                <GripVertical size={13} />
                               </div>
 
-                              <h3 className="font-semibold text-slate-900 dark:text-slate-100 pr-6">
-                                {lead.name}
-                              </h3>
+                              {/* Avatar + name */}
+                              <div className="flex items-center gap-2.5 mb-3">
+                                <div
+                                  className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold flex-shrink-0 ${getAvatarColor(lead.name)}`}
+                                >
+                                  {getInitials(lead.name)}
+                                </div>
+                                <p className="font-semibold text-sm text-foreground truncate pr-5">
+                                  {lead.name}
+                                </p>
+                              </div>
 
-                              <div className="space-y-2 mt-3">
-                                <div className="flex items-center text-sm text-slate-600 dark:text-slate-400">
-                                  <Building2 size={14} className="mr-2 flex-shrink-0 text-slate-400" />
+                              {/* Fields — same icon + text pattern as LeadsPage */}
+                              <div className="flex flex-col gap-1.5 pt-2.5 border-t border-border">
+                                <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                                  <Building2 className="w-3 h-3 text-slate-400 shrink-0" />
                                   <span className="truncate">{lead.company}</span>
                                 </div>
-                                <div className="flex items-center text-sm text-slate-600 dark:text-slate-400">
-                                  <Mail size={14} className="mr-2 flex-shrink-0 text-slate-400" />
+                                <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                                  <Mail className="w-3 h-3 text-slate-400 shrink-0" />
                                   <span className="truncate">{lead.email}</span>
                                 </div>
+                                <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                                  <Phone className="w-3 h-3 text-slate-400 shrink-0" />
+                                  <span>{lead.phone}</span>
+                                </div>
+                              </div>
+
+                              {/* Status pill — exact same className pattern as LeadsPage */}
+                              <div className="mt-2.5 pt-2.5 border-t border-border">
+                                <span
+                                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${config.pill}`}
+                                >
+                                  {config.label}
+                                </span>
                               </div>
                             </div>
                           )}
                         </Draggable>
                       ))}
                       {provided.placeholder}
-                      
-                      {filteredLeads.length === 0 && (
-                        <div className="text-center p-6 text-sm text-slate-400 dark:text-slate-500 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-lg mt-2">
-                          Drop leads here
+
+                      {/* Empty state — same as LeadsPage empty state */}
+                      {filteredLeads.length === 0 && !snapshot.isDraggingOver && (
+                        <div className="flex flex-col items-center justify-center gap-2 py-10 border-2 border-dashed border-slate-200 dark:border-neutral-800 rounded-xl">
+                          <div className="w-8 h-8 bg-neutral-100 dark:bg-neutral-900 rounded-lg flex items-center justify-center">
+                            <Users className="w-3.5 h-3.5 text-slate-400" />
+                          </div>
+                          <p className="text-xs text-slate-400 dark:text-slate-500">
+                            No leads here
+                          </p>
                         </div>
                       )}
                     </div>
