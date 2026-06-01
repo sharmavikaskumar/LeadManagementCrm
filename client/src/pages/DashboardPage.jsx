@@ -8,12 +8,22 @@ const DashboardPage = () => {
     const fetchDashboard = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch("http://192.168.43.11:5000/api/dashboard", {
-          headers: {
-            Authorization: `Bearer ${token}`,
+
+        const response = await fetch(
+          `${import.meta.env.VITE_API_URL}/dashboard`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           },
-        });
+        );
+
         const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message);
+        }
+
         setStats(data.stats);
       } catch (error) {
         console.log(error);

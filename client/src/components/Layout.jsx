@@ -1,6 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, LogOut, Zap, Menu, X, Sun, Moon } from "lucide-react";
+import {
+  LayoutDashboard,
+  Users,
+  LogOut,
+  TrendingUp,
+  Zap,
+  Menu,
+  X,
+  Sun,
+  Moon,
+  KanbanSquare,
+} from "lucide-react";
 
 const Layout = () => {
   const navigate = useNavigate();
@@ -74,7 +85,16 @@ const Layout = () => {
   const navItems = [
     { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { to: "/dashboard/leads", icon: Users, label: "Leads" },
+    { to: "/dashboard/board", icon: KanbanSquare, label: "Board" },
+   // { to: "/dashboard/admin", icon: TrendingUp, label: "Analytics" },
   ];
+  const filteredNavItems =
+  role === "admin"
+    ? [
+        ...navItems,
+        { to: "/dashboard/admin", icon: TrendingUp, label: "Analytics" },
+      ]
+    : navItems;
 
   const closeSidebar = () => setSidebarOpen(false);
 
@@ -104,7 +124,7 @@ const Layout = () => {
           Menu
         </p>
 
-        {navItems.map(({ to, icon: Icon, label }) => {
+        {filteredNavItems.map(({ to, icon: Icon, label }) => {
           const isActive = location.pathname === to;
           return (
             <Link
@@ -204,7 +224,11 @@ const Layout = () => {
               className="p-2 rounded-lg text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
               aria-label="Toggle Theme Mode"
             >
-              {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              {theme === "dark" ? (
+                <Sun className="w-4 h-4" />
+              ) : (
+                <Moon className="w-4 h-4" />
+              )}
             </button>
 
             <div className="w-2 h-2 rounded-full bg-green-500 ring-2 ring-green-500/20 animate-pulse" />
