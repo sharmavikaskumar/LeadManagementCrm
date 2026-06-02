@@ -1,64 +1,113 @@
+const Lead = require("../models/Lead");
 
-const lead = require("../models/Lead")
+const getAdminAnalytics = async (req, res) => {
+  try {
+    // Pagination
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 5;
 
-const getAdminAnalytics =async (req, res)=>{
-    try{
-        const leads=await lead.find().populate(
-            "createdBy",
-            "name email"
-        );
-        const employeeStats = {};
-        leads.forEach((lead)=>{
-            const userId=lead.createdBy._id.toString();
+    const skip = (page - 1) * limit;
 
-            // {
-            //     "101": {
-            //         employeeName: "Vikas",
-            //         employeeEmail: "vikas@gmail.com",
+    // Aggregation
+    const analytics = await Lead.aggregate([
+      {
+        $group: {
+          _id: "$createdBy",
 
-            //         totalLeads: 0,
-            //         new: 0,
-            //         contacted: 0,
-            //         qualified: 0,
-            //         closed: 0
-            //     }
-            //     }
+          totalLeads: { $sum: 1 },
 
-            if(!employeeStats[userId]){
-                employeeStats[userId]={
-                    employeeName:lead.createdBy.name,
-                    employeeEmail:lead.createdBy.email,
-                    
-                    totalLeads: 0,
-                    new:0,
-                    contacted: 0,
-                    qualified: 0,
-                    closed: 0,
+          new: {
+            $sum: {
+              $cond: [{ $eq: ["$status", "new"] }, 1, 0],
+            },
+          },
 
-                };
-            
-            }
-                employeeStats[userId].totalLeads++
-                employeeStats[userId][lead.status]++
-        })
+          contacted: {
+            $sum: {
+              $cond: [{ $eq: ["$status", "contacted"] }, 1, 0],
+            },
+          },
 
-        res.status(200).json({
-            success:true,
-            data: Object.values(employeeStats)
+          qualified: {
+            $sum: {
+              $cond: [{ $eq: ["$status", "qualified"] }, 1, 0],
+            },
+          },
 
-        })
+          closed: {
+            $sum: {
+              $cond: [{ $eq: ["$status", "closed"] }, 1, 0],
+            },
+          },
+        },
+      },
 
-    }catch(error){
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id",
+          foreignField: "_id",
+          as: "employee",
+        },
+      },
 
-        res.status(500).json({
-            success:false,
-            message:error.message,
+      {
+        $unwind: "$employee",
+      },
 
-        })
+      {
+        $project: {
+          _id: 0,
 
-    }
-}
+          employeeName: "$employee.name",
+          employeeEmail: "$employee.email",
 
-module.exports={
-      getAdminAnalytics,
-}
+          totalLeads: 1,
+          new: 1,
+          contacted: 1,
+          qualified: 1,
+          closed: 1,
+        },
+      },
+
+      // Pagination
+      { $skip: skip },
+      { $limit: limit },
+    ]);
+
+    // Total Employees Count
+    const totalEmployees = await Lead.aggregate([
+      {
+        $group: {
+          _id: "$createdBy",
+        },
+      },
+      {
+        $count: "total",
+      },
+    ]);
+
+    const total = totalEmployees[0]?.total || 0;
+
+    res.status(200).json({
+      success: true,
+
+      currentPage: page,
+      perPage: limit,
+
+      totalEmployees: total,
+      totalPages: Math.ceil(total / limit),
+
+      data: analytics,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+module.exports = {
+  getAdminAnalytics,
+};

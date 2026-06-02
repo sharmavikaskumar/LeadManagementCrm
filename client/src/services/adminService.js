@@ -1,4 +1,4 @@
-export const getAdminAnalytics = async () => {
+export const getAdminAnalytics = async ( page = 1) => {
   const token = localStorage.getItem("token");
 
   const response = await fetch(
