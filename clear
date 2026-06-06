@@ -1,0 +1,59 @@
+[33mcommit 22899ddf0008c9ab9d881017954e2d7ae2df689e[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m
+Author: sharmavikaskumar <sharmavikaskumar95@gmail.com>
+Date:   Tue Jun 2 20:40:51 2026 +0530
+
+     add a pagination the admin page
+
+[33mcommit 4e3bc4f7336ae262aee8f9855dec74623c198930[m[33m ([m[1;31morigin/main[m[33m)[m
+Author: sharmavikaskumar <sharmavikaskumar95@gmail.com>
+Date:   Mon Jun 1 20:54:20 2026 +0530
+
+    admin check logic
+
+[33mcommit 972daae10e1e8e2e2a48b1f7f2959705876e1e79[m
+Author: sharmavikaskumar <sharmavikaskumar95@gmail.com>
+Date:   Sat May 30 17:46:15 2026 +0530
+
+     board feture complted
+
+[33mcommit f087368f66091015a0ca16629ee8f16debe223e6[m
+Author: sharmavikaskumar <sharmavikaskumar95@gmail.com>
+Date:   Thu May 28 20:21:09 2026 +0530
+
+    added the brand and dorp feture
+
+[33mcommit 19765e2db24960d49db0a2ec80de7479a0ae46bf[m
+Author: sharmavikaskumar <sharmavikaskumar95@gmail.com>
+Date:   Thu May 28 09:55:51 2026 +0530
+
+    add a notes feture
+
+[33mcommit c2a990433f50e48d535e02145bd40d076553d385[m
+Author: sharmavikaskumar <sharmavikaskumar95@gmail.com>
+Date:   Sun May 24 16:17:14 2026 +0530
+
+    added the add notes feature
+
+[33mcommit f882f715612188bee9c370eb7a37dcd3571178c7[m
+Author: sharmavikaskumar <sharmavikaskumar95@gmail.com>
+Date:   Sat May 23 10:29:12 2026 +0530
+
+    added the mobile responsives
+
+[33mcommit 1d2e3519ed26263a478366fd6be84da078065537[m
+Author: sharmavikaskumar <sharmavikaskumar95@gmail.com>
+Date:   Sun May 17 18:24:25 2026 +0530
+
+    model 1 added
+
+[33mcommit 6909e07cdeb38170df05e7c239c9e3085866b5b0[m
+Author: sharmavikaskumar <sharmavikaskumar95@gmail.com>
+Date:   Sat May 16 10:32:50 2026 +0530
+
+    add crud opertions
+
+[33mcommit 16d78771ff6c441d5fb688721cfd2188a3fdfcb7[m
+Author: sharmavikaskumar <sharmavikaskumar95@gmail.com>
+Date:   Sat May 9 23:10:11 2026 +0530
+
+    Initial CRM backend setup with auth

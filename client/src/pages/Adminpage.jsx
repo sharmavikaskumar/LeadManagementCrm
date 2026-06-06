@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { getAdminAnalytics } from "@/services/adminService";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { Download } from "lucide-react";
 
 import {
   Users,
@@ -71,9 +75,42 @@ const AdminPage = () => {
   }, [page]);
 
   const filteredEmployees = employees.filter((emp) =>
-    emp.employeeName.toLowerCase().includes(search.toLowerCase())
+    emp.employeeName.toLowerCase().includes(search.toLowerCase()),
   );
-  
+
+  const exportPDF = () => {
+    const doc = new jsPDF();
+
+    doc.setFontSize(18);
+    doc.text("Employee Analytics Report", 14, 20);
+
+    autoTable(doc, {
+      startY: 30,
+      head: [
+        [
+          "Employee",
+          "Email",
+          "Total",
+          "New",
+          "Contacted",
+          "Qualified",
+          "Closed",
+        ],
+      ],
+      body: filteredEmployees.map((emp) => [
+        emp.employeeName,
+        emp.employeeEmail,
+        emp.totalLeads,
+        emp.new,
+        emp.contacted,
+        emp.qualified,
+        emp.closed,
+      ]),
+    });
+
+    doc.save("employee-analytics.pdf");
+  };
+
   const totals = employees.reduce(
     (acc, emp) => ({
       total: acc.total + (emp.totalLeads || 0),
@@ -82,7 +119,7 @@ const AdminPage = () => {
       qualified: acc.qualified + (emp.qualified || 0),
       closed: acc.closed + (emp.closed || 0),
     }),
-    { total: 0, new: 0, contacted: 0, qualified: 0, closed: 0 }
+    { total: 0, new: 0, contacted: 0, qualified: 0, closed: 0 },
   );
 
   const summaryCards = [
@@ -156,8 +193,8 @@ const AdminPage = () => {
           );
         })}
       </div>
-      
-      <div className="flex items-center gap-2">
+
+      <div className="flex items-center justify-between gap-2">
         <input
           type="text"
           placeholder="Search employee..."
@@ -165,6 +202,14 @@ const AdminPage = () => {
           onChange={(e) => setSearch(e.target.value)}
           className="w-full sm:w-72 px-4 py-2 rounded-lg border border-border bg-background text-sm outline-none focus:ring-2 focus:ring-blue-500"
         />
+
+        <Button
+            onClick={exportPDF}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export PDF
+          </Button>
       </div>
 
       <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
@@ -245,7 +290,7 @@ const AdminPage = () => {
               )}
             </TableBody>
           </Table>
-          
+
           {/* Improved Pagination */}
           <div className="flex items-center justify-between px-5 py-4 border-t border-border bg-neutral-50/50 dark:bg-neutral-900/20 mt-2">
             <button
@@ -258,8 +303,12 @@ const AdminPage = () => {
             </button>
 
             <div className="text-sm font-medium text-slate-500 dark:text-slate-400">
-              Page <span className="text-slate-900 dark:text-slate-100">{page}</span> of{" "}
-              <span className="text-slate-900 dark:text-slate-100">{totalPages}</span>
+              Page{" "}
+              <span className="text-slate-900 dark:text-slate-100">{page}</span>{" "}
+              of{" "}
+              <span className="text-slate-900 dark:text-slate-100">
+                {totalPages}
+              </span>
             </div>
 
             <button

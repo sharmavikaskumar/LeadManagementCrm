@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import {
   cretaeLead,
@@ -63,7 +64,21 @@ const LeadsPage = () => {
       toast.error(error.message);
     }
   };
+  const sendWhatsApp = (lead) => {
+    const phone = lead.phone.replace(/\D/g, "");
 
+    const message = `Hi ${lead.name},
+
+Thank you for your interest.
+
+Regards,
+Vikas`;
+
+    window.open(
+      `https://web.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}`,
+      "_blank",
+    );
+  };
   useEffect(() => {
     const fetchLeads = async () => {
       try {
@@ -325,6 +340,13 @@ const LeadsPage = () => {
                 >
                   <Trash2 className="w-3 h-3" /> Delete
                 </button>
+                <button
+                  onClick={() => sendWhatsApp(lead)}
+                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-green-600 bg-green-50 hover:bg-green-100 rounded-lg transition-colors"
+                >
+                  <MessageCircle className="w-3 h-3" />
+                  WhatsApp
+                </button>
               </div>
             </div>
           ))
@@ -439,6 +461,13 @@ const LeadsPage = () => {
                         title="Delete"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => sendWhatsApp(lead)}
+                        className="p-1.5 text-green-500 hover:bg-green-50 rounded-md transition-colors"
+                        title="WhatsApp"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </TableCell>
