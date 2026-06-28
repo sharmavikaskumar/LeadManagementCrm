@@ -39,6 +39,7 @@ const LeadsPage = () => {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [selectedLeads, setSelectedLeads] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -50,6 +51,40 @@ const LeadsPage = () => {
   const [showNotesModal, setShowNotesModal] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
   const [noteText, setNoteText] = useState("");
+
+  // ── Bulk WhatsApp ──
+  const [showBulkModal, setShowBulkModal] = useState(false);
+  const [bulkQueue, setBulkQueue] = useState([]);
+  const [bulkIndex, setBulkIndex] = useState(0);
+  const DEFAULT_TEMPLATE =
+    "Hi {{name}},\n\nThank you for your interest.\n\nRegards,\nVikas";
+  const [bulkTemplate, setBulkTemplate] = useState(DEFAULT_TEMPLATE);
+
+  const PLACEHOLDERS = [
+    { tag: "{{name}}", label: "Name" },
+    { tag: "{{company}}", label: "Company" },
+    { tag: "{{phone}}", label: "Phone" },
+    { tag: "{{email}}", label: "Email" },
+    { tag: "{{status}}", label: "Status" },
+  ];
+
+  const resolveTemplate = (template, lead) =>
+    template
+      .replace(/{{name}}/g, lead.name)
+      .replace(/{{company}}/g, lead.company)
+      .replace(/{{phone}}/g, lead.phone)
+      .replace(/{{email}}/g, lead.email)
+      .replace(/{{status}}/g, lead.status);
+
+  const previewMessage = bulkQueue[bulkIndex]
+    ? resolveTemplate(bulkTemplate, bulkQueue[bulkIndex])
+    : resolveTemplate(bulkTemplate, {
+        name: "John Doe",
+        company: "Acme Corp",
+        phone: "+91 9000000000",
+        email: "john@example.com",
+        status: "new",
+      });
 
   const handleAddNote = async () => {
     try {
@@ -64,21 +99,16 @@ const LeadsPage = () => {
       toast.error(error.message);
     }
   };
+
   const sendWhatsApp = (lead) => {
     const phone = lead.phone.replace(/\D/g, "");
-
-    const message = `Hi ${lead.name},
-
-Thank you for your interest.
-
-Regards,
-Vikas`;
-
+    const message = `Hi ${lead.name},\n\nThank you for your interest.\n\nRegards,\nVikas`;
     window.open(
       `https://web.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}`,
       "_blank",
     );
   };
+
   useEffect(() => {
     const fetchLeads = async () => {
       try {
@@ -93,6 +123,14 @@ Vikas`;
     };
     fetchLeads();
   }, [page]);
+
+  const toggleLeadSelection = (id) => {
+    setSelectedLeads((prev) =>
+      prev.includes(id)
+        ? prev.filter((leadId) => leadId !== id)
+        : [...prev, id],
+    );
+  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -114,16 +152,39 @@ Vikas`;
       }
       setShowModel(false);
       setEditingLead(null);
-      setFormData({
-        name: "",
-        email: "",
-        phone: "",
-        company: "",
-        status: "new",
-      });
+      setFormData({ name: "", email: "", phone: "", company: "", status: "new" });
     } catch (error) {
       toast.error(error.message);
     }
+  };
+
+  const handleBulkWhatsApp = () => {
+    const selected = leads.filter((lead) => selectedLeads.includes(lead._id));
+    if (selected.length === 0) return;
+    setBulkQueue(selected);
+    setBulkIndex(0);
+    setShowBulkModal(true);
+  };
+
+  const handleBulkNext = () => {
+    const lead = bulkQueue[bulkIndex];
+    const phone = lead.phone.replace(/\D/g, "");
+    const message = resolveTemplate(bulkTemplate, lead);
+    window.open(
+      `https://web.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}`,
+      "_blank",
+    );
+    if (bulkIndex + 1 >= bulkQueue.length) {
+      setShowBulkModal(false);
+      setSelectedLeads([]);
+      toast.success("All messages sent!");
+    } else {
+      setBulkIndex((i) => i + 1);
+    }
+  };
+
+  const insertPlaceholder = (tag) => {
+    setBulkTemplate((prev) => prev + tag);
   };
 
   const filteredLeads = leads.filter((lead) =>
@@ -164,22 +225,22 @@ Vikas`;
     new: {
       label: "New",
       className:
-        "bg-blue-55/60 text-blue-600 border-blue-200 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-900/40",
+        "bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-900/40",
     },
     contacted: {
       label: "Contacted",
       className:
-        "bg-purple-55/60 text-purple-600 border-purple-200 dark:bg-purple-950/20 dark:text-purple-400 dark:border-purple-900/40",
+        "bg-purple-50 text-purple-600 border-purple-200 dark:bg-purple-950/20 dark:text-purple-400 dark:border-purple-900/40",
     },
     qualified: {
       label: "Qualified",
       className:
-        "bg-emerald-55/60 text-emerald-600 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/40",
+        "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/40",
     },
     closed: {
       label: "Closed",
       className:
-        "bg-slate-100 text-slate-500 border-slate-200 dark:bg-neutral-800 dark:text-neutral-450 dark:border-neutral-700",
+        "bg-slate-100 text-slate-500 border-slate-200 dark:bg-neutral-800 dark:text-neutral-400 dark:border-neutral-700",
     },
   };
 
@@ -214,13 +275,14 @@ Vikas`;
     return (
       <div className="flex flex-col items-center justify-center h-[80vh] text-slate-400 gap-3">
         <div className="w-5 h-5 border-2 border-slate-200 dark:border-neutral-800 border-t-blue-500 rounded-full animate-spin" />
-        <p className="text-xs font-semibold text-slate-450">Loading leads…</p>
+        <p className="text-xs font-semibold text-slate-500">Loading leads…</p>
       </div>
     );
   }
 
   return (
     <div className="px-4 py-6 sm:px-6 sm:py-8 max-w-7xl mx-auto space-y-4">
+      {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-lg sm:text-2xl font-semibold text-slate-900 dark:text-white tracking-tight">
@@ -252,6 +314,16 @@ Vikas`;
             <Plus className="w-3.5 h-3.5" />
             Add lead
           </button>
+
+          {/* Bulk WhatsApp */}
+          <button
+            onClick={handleBulkWhatsApp}
+            disabled={selectedLeads.length === 0}
+            className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed text-white px-3.5 py-2 rounded-lg text-xs font-medium transition-colors whitespace-nowrap"
+          >
+            <MessageCircle className="w-3.5 h-3.5" />
+            Bulk WhatsApp ({selectedLeads.length})
+          </button>
         </div>
       </div>
 
@@ -262,9 +334,7 @@ Vikas`;
             <div className="w-9 h-9 bg-neutral-100 dark:bg-neutral-900 rounded-lg flex items-center justify-center">
               <Users className="w-4 h-4 text-slate-400" />
             </div>
-            <p className="text-foreground font-medium text-sm">
-              No leads found
-            </p>
+            <p className="text-foreground font-medium text-sm">No leads found</p>
             <p className="text-slate-400 text-xs text-center max-w-xs px-4">
               Get started by adding your first lead.
             </p>
@@ -279,9 +349,14 @@ Vikas`;
           filteredLeads.map((lead) => (
             <div
               key={lead._id}
-              className="bg-card border border-border rounded-xl p-4.5"
+              className="bg-card border border-border rounded-xl p-4"
             >
               <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={selectedLeads.includes(lead._id)}
+                  onChange={() => toggleLeadSelection(lead._id)}
+                />
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${getAvatarColor(lead.name)}`}
                 >
@@ -291,15 +366,14 @@ Vikas`;
                   <p className="font-semibold text-sm text-foreground truncate">
                     {lead.name}
                   </p>
-                  <div className="flex items-center gap-1 text-xs text-slate-450 mt-0.5">
+                  <div className="flex items-center gap-1 text-xs text-slate-500 mt-0.5">
                     <Building2 className="w-3 h-3 shrink-0 text-slate-400" />
                     <span className="truncate">{lead.company}</span>
                   </div>
                 </div>
                 <span
                   className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border flex-shrink-0 ${
-                    statusConfig[lead.status]?.className ??
-                    statusConfig.new.className
+                    statusConfig[lead.status]?.className ?? statusConfig.new.className
                   }`}
                 >
                   {statusConfig[lead.status]?.label ?? lead.status}
@@ -329,8 +403,7 @@ Vikas`;
                     setSelectedLead(lead);
                     setShowNotesModal(true);
                   }}
-                  className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-md transition-colors"
-                  title="Notes"
+                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-amber-600 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/20 dark:text-amber-400 rounded-lg transition-colors"
                 >
                   Notes
                 </button>
@@ -385,6 +458,11 @@ Vikas`;
                 >
                   <TableCell className="py-3 pl-5">
                     <div className="flex items-center gap-2.5">
+                      <input
+                        type="checkbox"
+                        checked={selectedLeads.includes(lead._id)}
+                        onChange={() => toggleLeadSelection(lead._id)}
+                      />
                       <div
                         className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold flex-shrink-0 ${getAvatarColor(lead.name)}`}
                       >
@@ -394,7 +472,7 @@ Vikas`;
                         <div className="font-semibold text-sm text-foreground">
                           {lead.name}
                         </div>
-                        <div className="text-xs text-slate-450 lg:hidden mt-0.5">
+                        <div className="text-xs text-slate-500 lg:hidden mt-0.5">
                           {lead.company}
                         </div>
                       </div>
@@ -417,7 +495,7 @@ Vikas`;
                   </TableCell>
 
                   <TableCell className="py-3 hidden lg:table-cell">
-                    <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-350">
+                    <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300">
                       <Building2 className="w-3 h-3 text-slate-400 shrink-0" />
                       <span className="truncate max-w-[130px]">
                         {lead.company}
@@ -428,8 +506,7 @@ Vikas`;
                   <TableCell className="py-3">
                     <span
                       className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${
-                        statusConfig[lead.status]?.className ??
-                        statusConfig.new.className
+                        statusConfig[lead.status]?.className ?? statusConfig.new.className
                       }`}
                     >
                       {statusConfig[lead.status]?.label ?? lead.status}
@@ -457,7 +534,7 @@ Vikas`;
                       </button>
                       <button
                         onClick={() => handleDelete(lead._id)}
-                        className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-55/15 dark:hover:bg-rose-950/40 rounded-md transition-colors"
+                        className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50/50 dark:hover:bg-rose-950/40 rounded-md transition-colors"
                         title="Delete"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -485,8 +562,7 @@ Vikas`;
                         No leads found
                       </p>
                       <p className="text-slate-400 text-xs max-w-xs mx-auto">
-                        Get started by adding your first lead to track your
-                        sales pipeline.
+                        Get started by adding your first lead to track your sales pipeline.
                       </p>
                       <button
                         onClick={() => setShowModel(true)}
@@ -529,7 +605,7 @@ Vikas`;
         )}
       </div>
 
-      {/* Mobile pagination */}
+      {/* ── Mobile pagination ── */}
       {leads.length > 0 && (
         <div className="md:hidden flex items-center justify-between px-1">
           <p className="text-xs text-slate-400">
@@ -555,7 +631,7 @@ Vikas`;
         </div>
       )}
 
-      {/* ── Modal ── */}
+      {/* ── Add / Edit Modal ── */}
       {showModel && (
         <div
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-slate-900/30 dark:bg-black/50 backdrop-blur-[2px]"
@@ -567,7 +643,7 @@ Vikas`;
                 <h2 className="text-sm font-semibold text-foreground">
                   {editingLead ? "Edit lead" : "Add new lead"}
                 </h2>
-                <p className="text-xs text-slate-450 mt-0.5">
+                <p className="text-xs text-slate-500 mt-0.5">
                   {editingLead
                     ? "Update the information for this lead."
                     : "Enter the details for this lead."}
@@ -676,7 +752,7 @@ Vikas`;
                 <button
                   type="button"
                   onClick={handleSubmit}
-                  className="px-4 py-2 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-750 transition-colors"
+                  className="px-4 py-2 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   {editingLead ? "Update lead" : "Save lead"}
                 </button>
@@ -685,6 +761,112 @@ Vikas`;
           </div>
         </div>
       )}
+
+      {/* ── Bulk WhatsApp Modal ── */}
+      {showBulkModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+          onClick={(e) =>
+            e.target === e.currentTarget && setShowBulkModal(false)
+          }
+        >
+          <div className="bg-background border border-border w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+              <div>
+                <h2 className="text-sm font-semibold text-foreground">
+                  Bulk WhatsApp
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {bulkIndex + 1} of {bulkQueue.length} — sending to{" "}
+                  <span className="font-medium text-foreground">
+                    {bulkQueue[bulkIndex]?.name}
+                  </span>
+                </p>
+              </div>
+              <button
+                onClick={() => setShowBulkModal(false)}
+                className="p-1.5 rounded-md hover:bg-muted transition-colors"
+              >
+                <X className="w-4 h-4 text-slate-500" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              {/* Placeholder chips */}
+              <div className="space-y-1.5">
+                <p className="text-[10.5px] font-semibold text-slate-500 uppercase tracking-wider">
+                  Insert placeholder
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {PLACEHOLDERS.map(({ tag, label }) => (
+                    <button
+                      key={tag}
+                      onClick={() => insertPlaceholder(tag)}
+                      className="px-2.5 py-1 text-xs font-medium rounded-full border border-border bg-muted hover:bg-neutral-200 dark:hover:bg-neutral-800 text-foreground transition-colors"
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Template editor */}
+              <div className="space-y-1.5">
+                <p className="text-[10.5px] font-semibold text-slate-500 uppercase tracking-wider">
+                  Message template
+                </p>
+                <textarea
+                  value={bulkTemplate}
+                  onChange={(e) => setBulkTemplate(e.target.value)}
+                  rows={6}
+                  className="w-full border border-border bg-background rounded-xl p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-400 font-mono"
+                />
+              </div>
+
+              {/* Live preview */}
+              <div className="space-y-1.5">
+                <p className="text-[10.5px] font-semibold text-slate-500 uppercase tracking-wider">
+                  Preview
+                </p>
+                <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/40 rounded-xl p-3 text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">
+                  {previewMessage}
+                </div>
+              </div>
+
+              {/* Progress bar */}
+              <div className="w-full bg-neutral-100 dark:bg-neutral-800 rounded-full h-1.5">
+                <div
+                  className="bg-green-500 h-1.5 rounded-full transition-all duration-300"
+                  style={{
+                    width: `${(bulkIndex / bulkQueue.length) * 100}%`,
+                  }}
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end gap-2 pt-1">
+                <button
+                  onClick={() => setShowBulkModal(false)}
+                  className="px-4 py-2 text-xs font-medium border border-border rounded-lg hover:bg-muted transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleBulkNext}
+                  className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                >
+                  <MessageCircle className="w-3.5 h-3.5" />
+                  {bulkIndex + 1 === bulkQueue.length
+                    ? "Send last & finish"
+                    : `Send & next (${bulkIndex + 1}/${bulkQueue.length})`}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Notes Modal ── */}
       {showNotesModal && (
         <div
@@ -694,18 +876,15 @@ Vikas`;
           }
         >
           <div className="bg-background border border-border w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden">
-            {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-border">
               <div>
                 <h2 className="text-sm font-semibold text-foreground">
                   Lead Notes
                 </h2>
-
                 <p className="text-xs text-slate-500 mt-0.5">
                   {selectedLead?.name}
                 </p>
               </div>
-
               <button
                 onClick={() => setShowNotesModal(false)}
                 className="p-1.5 rounded-md hover:bg-muted transition-colors"
@@ -714,9 +893,7 @@ Vikas`;
               </button>
             </div>
 
-            {/* Body */}
             <div className="p-5 space-y-4">
-              {/* Add note */}
               <div className="space-y-3">
                 <textarea
                   value={noteText}
@@ -725,7 +902,6 @@ Vikas`;
                   rows={4}
                   className="w-full border border-border bg-background rounded-xl p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
                 />
-
                 <div className="flex justify-end">
                   <button
                     onClick={handleAddNote}
@@ -737,7 +913,6 @@ Vikas`;
                 </div>
               </div>
 
-              {/* Notes list */}
               <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
                 {selectedLead?.notes?.length > 0 ? (
                   selectedLead.notes
@@ -751,7 +926,6 @@ Vikas`;
                         <p className="text-sm text-foreground whitespace-pre-wrap">
                           {note.text}
                         </p>
-
                         <p className="text-[11px] text-slate-400 mt-2">
                           {new Date(note.createdAt).toLocaleString()}
                         </p>
